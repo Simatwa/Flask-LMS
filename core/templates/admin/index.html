@@ -1,0 +1,9 @@
+{% extends "admin/master.html" %}
+
+{% block body %}
+<h2> Welcome admin <strong>{{ current_user.fullname }}</h2>
+<p>Hello {{ current_user.fname }}, this panel will allow you to manage all models. Any changes that will be made here, will affect the entire database.</p>
+
+<p>Visit <a href='{{ url_for("home") }}'>Home page</a></p>
+
+{% endblock %}
