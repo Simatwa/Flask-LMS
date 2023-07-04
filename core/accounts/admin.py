@@ -1,17 +1,15 @@
-from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
 from . import app
 from .models import User
 from ..models import db
+from ..admin import admin
 from flask_login import current_user
 from flask import abort, redirect, url_for, flash
 import click
 from wtforms.validators import DataRequired, Email
 from ..app import application
 from .views import Utils
-
-admin = Admin(application, name="Users", template_mode="bootstrap3")
 
 
 class UserModelView(ModelView):
@@ -57,6 +55,10 @@ class UserModelView(ModelView):
         "fname": {
             "label": "First Name",
             "validators": [DataRequired(message="First name is required")],
+        },
+        "sname": {
+            "label": "Second Name",
+            "validators": [],
         },
         "email": {
             "label": "Email address",
@@ -121,7 +123,7 @@ class Cmd:
         new_user.is_authenticated = True
         db.session.add(new_user)
         db.session.commit()
-        click.secho(f"'{fname}' added as user successfully!", fg="cyan")
+        click.secho(f"'{fname}' added as Admin successfully!", fg="cyan")
 
 
 admin.add_view(UserModelView(User, db.session))

@@ -99,6 +99,7 @@ class Accounts:
                     User.password == Utils.hash_password(password),
                     or_(
                         User.email == identifier,
+                        User.phone_no == identifier,
                         User.index_no
                         == (int(identifier) if identifier.isdigit() else identifier),
                     ),
@@ -107,10 +108,10 @@ class Accounts:
                     try_user.is_active = True
                     if not try_user.is_authenticated:
                         """User address is not verified"""
-                        try_user.is_anonymous = False               
+                        try_user.is_anonymous = False
                         db.session.commit()
                         login_user(try_user)
-                        flash("Kindly verify your email address","warn")
+                        flash("Kindly verify your email address", "warn")
                         return redirect(url_for("accounts.verify_user_address"))
                     flash("Logged in successful", "info")
                     try_user.is_authenticated = True
@@ -130,7 +131,7 @@ class Accounts:
         form = VerifyUserForm()
         target_user = User.query.filter_by(id=current_user.get_id()).first_or_404()
         assert target_user.is_authenticated == False, abort(401)
-   
+
         if request.method == "GET":
             target_user.token = Utils.generate_verification_token()
             db.session.commit()
@@ -152,7 +153,7 @@ class Accounts:
             send_mail("Confirmation Token", html=html, recipients=[target_user.email])
             return render_template("verify_user.html", form=form)
         else:
-            if form.validate_on_submit(): 
+            if form.validate_on_submit():
                 if form.token.data == target_user.token:
                     flash("Verification succeeded!", "info")
                     target_user.is_authenticated = True
@@ -207,21 +208,23 @@ class Accounts:
         """Completes password reset process"""
         email = request.cookies.get("mail")
         if not email:
-        	return redirect(url_for("accounts.reset_password"))
-        	
+            return redirect(url_for("accounts.reset_password"))
+
         form = ResetPasswordFormNew()
         if form.validate_on_submit():
-            user_exist = User.query.filter_by(email=email, token=form.token.data).first()
+            user_exist = User.query.filter_by(
+                email=email, token=form.token.data
+            ).first()
             if user_exist:
                 user_exist.password = Utils.hash_password(form.password.data)
-                user_exist.token=False
+                user_exist.token = False
                 db.session.commit()
                 flash("Password reset successfully!", "info")
                 response = make_response(redirect(url_for("home")))
                 response.delete_cookie("mail")
                 return response
             else:
-                flash("Invalid Authentication token!","warn")
+                flash("Invalid Authentication token!", "warn")
                 return render_template(
                     "reset_user_password_enter_token.html", form=form
                 )

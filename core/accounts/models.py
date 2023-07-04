@@ -7,7 +7,7 @@ import logging
 
 class UserImage(db.Model):
     __tablename__ = "user_images"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, default="users.id")
     name = db.Column(db.String(30), default="default")
     path = db.Column(db.String(80), default="default_profile.png")
     user_id = db.Column(
@@ -20,7 +20,7 @@ class UserImage(db.Model):
     )
 
     def __repr__(self):
-        return "<UserImage %r>" % self.id
+        return "%r" % self.id
 
     def __unicode__(self):
         return self.name
@@ -37,7 +37,9 @@ class User(db.Model):
         nullable=False,
     )
     index_no = db.Column(db.Integer, unique=True, nullable=True)
-    phone_no = db.Column(db.Integer,
+    phone_no = db.Column(
+        db.String(13), unique=True, nullable=True, name="unique_users_phone_no"
+    )
     password = db.Column(db.String(64), nullable=False)
     is_student = db.Column(db.Boolean(), default=False)
     is_teacher = db.Column(db.Boolean(), default=False)
@@ -54,7 +56,7 @@ class User(db.Model):
     token = db.Column(db.String(8), nullable=True)
 
     def __repr__(self):
-        return "<User %r>" % self.id
+        return "%s" % self.fullname
 
     def __unicode__(self):
         return self.fullname
