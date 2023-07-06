@@ -24,6 +24,8 @@ class UserLoginForm(FlaskForm):
         ],
         render_kw={"class": "w3-input", "placeholder": "Password"},
     )
+    # category = SelectField(label="Login as",validators=[DataRequired(message="Select category")],render_kw={"class":"w3-select"})
+
     remember_me = BooleanField(label="Remember me", render_kw={"class": "w3-check"})
     Login = SubmitField(render_kw={"class": "w3-button w3-steal w3-block w3-ripple"})
 

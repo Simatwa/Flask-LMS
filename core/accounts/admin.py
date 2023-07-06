@@ -1,15 +1,16 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
-from . import app
-from .models import User
-from ..models import db
-from ..admin import admin
+from core.accounts import app
+from core.accounts.models import User
+from core.models import db
+from core.admin import admin
 from flask_login import current_user
 from flask import abort, redirect, url_for, flash
 import click
 from wtforms.validators import DataRequired, Email
-from ..app import application
-from .views import Utils
+
+# from core.app import application
+from core.accounts.views import Utils
 
 
 class UserModelView(ModelView):
@@ -17,7 +18,7 @@ class UserModelView(ModelView):
     can_create = True
     can_edit = True
     can_view_details = True
-    page_size = 60
+    page_size = 2
     form_excluded_columns = [
         "created_at",
         "last_updated",
@@ -128,7 +129,7 @@ class Cmd:
 
 admin.add_view(UserModelView(User, db.session))
 
-from .models import UserImage
+from core.accounts.models import UserImage
 
 admin.add_view(ModelView(UserImage, db.session))
 

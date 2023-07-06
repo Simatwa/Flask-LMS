@@ -95,6 +95,7 @@ class Accounts:
             if form.validate_on_submit():
                 identifier = form.identifier.data
                 password = form.password.data
+                # category = form.category.data
                 try_user = User.query.filter(
                     User.password == Utils.hash_password(password),
                     or_(

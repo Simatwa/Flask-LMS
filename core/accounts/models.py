@@ -1,4 +1,5 @@
-from ..models import db, application
+from core.models import db
+from core.app import application
 from flask import url_for
 from datetime import datetime
 from os import remove, path, getcwd
@@ -89,9 +90,6 @@ class UserProfileManager:
 # db.event.listen(UserImage,"after_update",UserProfileManager.update_user_image)
 # db.event.listen(UserImage,"after_insert",UserProfileManager.update_user_image)
 db.event.listen(UserImage, "before_delete", UserProfileManager.delete_user_image)
-
-with application.app_context():
-    db.create_all()
 """
 	new_user = User(fname="Caleb",email="email@gmail.com",)
 	new_image = UserImage(id=1)

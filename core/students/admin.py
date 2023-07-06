@@ -1,15 +1,15 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
 from flask import abort, redirect, url_for, request
-from flask_login import current_user
-from ..app import application
-from ..models import db
-from ..admin import admin
-from .models import Exam
-from datetime import datetime
+from flask_login import current_user, login_required
+from flask import flash, redirect, url_for
+from core.app import application
+from core.models import db
+from core.admin import admin
+from core.students.models import Student, Class, ClassStream
 
 
-class ExamModelView(ModelView):
+class StudentModelView(ModelView):
     page_size = 50
     can_export = True
     export_max_row = 50
@@ -17,46 +17,61 @@ class ExamModelView(ModelView):
     can_edit = True
     can_view_details = True
     form_base_class = SecureForm
-    this_year = lambda: datetime.now().year
-    form_choices = {
-        "stream": [
-            (
-                "A",
-                "A",
-            ),
-            ("B", "B"),
-            ("C", "C"),
-            ("BL", "Blue"),
-            ("RD", "Red"),
-            ("ET", "East"),
-        ],
-        "form": [
-            (1, 1),
-            (2, 2),
-            (3, 3),
-            (4, 4),
-        ],
-        "term": [
-            (1, 1),
-            (2, 2),
-            (3, 3),
-        ],
-        "year": [
-            (this_year(), this_year()),
-            (this_year() - 1, this_year() - 1),
-            (this_year() - 2, this_year() - 2),
-        ],
-    }
 
-    def is_inaccessible(self):
-        if current_user.is_athenticated:
-            return any([current_user.is_admin])
+    @login_required
+    def is_accessible(self):
+        if hasattr(current_user, "is_admin"):
+            return current_user.is_admin
         else:
-            abort(401)
+            return False
 
-    def unaccessible_callback(self):
-        flash("You're not authorised to access this site!")
+    def inacessible_callback(self):
+        flash("You're not authorised to access that site!", "warn")
         return redirect(url_for("home"))
 
 
-admin.add_view(ExamModelView(Exam, db.session))
+class ClassModelView(ModelView):
+    page_size = 50
+    can_export = True
+    export_max_row = 50
+    can_create = True
+    can_edit = True
+    can_view_details = True
+    form_base_class = SecureForm
+
+    @login_required
+    def is_accessible(self):
+        if hasattr(current_user, "is_admin"):
+            return current_user.is_admin
+        else:
+            return False
+
+    def inacessible_callback(self):
+        flash("You're not authorised to access that site!", "warn")
+        return redirect(url_for("home"))
+
+
+class ClassStreamModelView(ModelView):
+    page_size = 50
+    can_export = True
+    export_max_row = 50
+    can_create = True
+    can_edit = True
+    can_view_details = True
+    form_base_class = SecureForm
+
+    @login_required
+    def is_accessible(self):
+        if hasattr(current_user, "is_admin"):
+            return current_user.is_admin
+        else:
+            return False
+
+    def inacessible_callback(self):
+        flash("You're not authorised to access that site!", "warn")
+        return redirect(url_for("home"))
+
+
+admin.add_view(StudentModelView(Student, db.session, name="Students"))
+admin.add_view(ClassModelView(Class, db.session, name="Classes"))
+admin.add_view(ClassStreamModelView(ClassStream, db.session, "Form"))
