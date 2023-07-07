@@ -21,7 +21,7 @@ class Teacher(db.Model):
         "Subject", secondary="teacher_subject", backref="teachers", lazy=True
     )
     salary = db.Column(db.Numeric(10, 2), nullable=False)
-    residence = db.Column(db.String(25), nullable=True)
+    residence = db.Column(db.String(25), nullable=False)
     special_info = db.Column(db.Text, nullable=True)
     bom = db.Column(db.Boolean(), default=False)
     is_parent = db.Column(db.Boolean(), default=False)
@@ -55,7 +55,9 @@ class Teacher(db.Model):
         db.ForeignKey("classstreams.id", onupdate="CASCADE", ondelete="SET NULL"),
         autoincrement=True,
     )
-
+    activity_id = db.Column(db.Integer,db.ForeignKey("activities.id",onupdate="CASCADE",ondelete="SET NULL"),autoincrement=True)
+    department_id = db.Column(db.Integer, db.ForeignKey("departments.id",onupdate="CASCADE",ondelete="SET NULL"),autoincrement=True)
+    
     def __repr__(self):
         return "<Teacher %r>" % self.id
 
@@ -80,10 +82,8 @@ class Subject(db.Model):
     )
     created_at = db.Column(db.DateTime(), default=datetime.utcnow)
     # db.Column(db.String(40),db.ForeignKey("teachers.fname"))
-    exam_id = db.Column(
-        db.Integer, db.ForeignKey("exams.id", onupdate="CASCADE", ondelete="SET NULL")
-    )
-
+    exam_id = db.Column(db.Integer, db.ForeignKey("exams.id",onupdate="CASCADE",ondelete="SET NULL"))
+    
     def __repr__(self):
         return "<Subject %s>" % self.name
 
@@ -118,30 +118,62 @@ class TeacherSubject(db.Model):
 
 
 class AcademicYear(db.Model):
-    """Academic year"""
+	"""Academic year """
+	# Register in admin
+	__tablename__="academicyears"
+	id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+	year = db.Column(db.Integer,nullable=False,default=datetime.now().year)
+	term = db.Column(db.Integer,nullable=False)
+	created_at = db.Column(db.DateTime(), default=datetime.utcnow)
+	class_id = db.Column(db.Integer,db.ForeignKey("classes.id",ondelete="SET NULL", onupdate="CASCADE",name="class_id"),autoincrement=True)
+	exam_id = db.Column(db.Integer,db.ForeignKey("exams.id",ondelete="SET NULL",onupdate="CASCADE"))
+	
+	def __repr__(self):
+		return "<AcademicYear %r>"%self.year
+	
+	def __str__(self):
+		return "{}/{}".format(self.year,self.term)
 
-    # Register in admin
-    __tablename__ = "academicyears"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    year = db.Column(db.Integer, nullable=False, default=datetime.now().year)
-    term = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime(), default=datetime.utcnow)
-    class_id = db.Column(
-        db.Integer,
-        db.ForeignKey(
-            "classes.id", ondelete="SET NULL", onupdate="CASCADE", name="class_id"
-        ),
-        autoincrement=True,
-    )
-    exam_id = db.Column(
-        db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL", onupdate="CASCADE")
-    )
+class Activity(db.Model):
+	"""School activities"""
+	__tablename__="activities"
+	id = db.Column(db.Integer, autoincrement=True,primary_key=True)
+	title = db.Column(db.String(20),nullable=False)
+	department = db.relationship("Department",lazy=True,uselist=True,backref="activities")
+	date = db.Column(db.Date(),nullable=False)
+	time = db.Column(db.Time(),nullable=False)
+	leads = db.relationship("Teacher",lazy=True,uselist=True,backref="activities")
+	detail = db.Column(db.Text)
+	duration = db.Column(db.String(20),nullable=True)
+	location = db.Column(db.String(20),default="School")
+	expenditure = db.Column(db.Numeric(10,2),default=0)
+	notify_supervisor = db.Column(db.Boolean(),default=False)
+	is_over = db.Column(db.Boolean(),default=False)
+	# Add event listener that will send the message to Supervisor
+	lastly_updated = db.Column(db.DateTime(),default=datetime.utcnow,onupdate=datetime.utcnow)
+	created_at = db.Column(db.DateTime(),default=datetime.utcnow)
+	
+	def __repr__(self):
+		return "<Activity %r>"%self.id
+	
+	def __str__(self):
+		return "{}. {}".format(self.id,self.title)
 
-    def __repr__(self):
-        return "<AcademicYear %r>" % self.year
-
-    def __str__(self):
-        return "{}/{}".format(self.year, self.term)
-
-
+class Department(db.Model):
+	"""School departments"""
+	__tablename__="departments"
+	id = db.Column(db.Integer, autoincrement=True,primary_key=True)
+	name = db.Column(db.String(20),nullable=False,unique=True)
+	lead = db.relationship("Teacher",lazy=True,uselist=False)
+	objectives = db.Column(db.Text,)
+	activity_id = db.Column(db.ForeignKey("activities.id",onupdate="CASCADE",ondelete="SET NULL"),autoincrement=True)
+	lastly_modified = db.Column(db.DateTime(),default=datetime.utcnow, onupdate=datetime.utcnow)
+	created_at = db.Column(db.DateTime(),default=datetime.utcnow)
+	
+	def __repr__(self):
+		return "<Department %r>"%self.id
+		
+	def __str__(self):
+		return self.name
+		
 db.event.listen(Teacher, "before_insert", event_listener.insert_age)
