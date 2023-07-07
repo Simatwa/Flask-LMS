@@ -1,0 +1,3 @@
+from flask import Blueprint
+
+app = Blueprint("teachers", __name__, template_folder="templates")

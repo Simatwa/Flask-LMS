@@ -23,9 +23,10 @@ class Student(db.Model):
         "Subject", secondary="student_subject", backref="students", lazy=True
     )
     Class = db.relationship("ClassStream", uselist=False, lazy=True)
-    fees_paid = db.Column(db.Numeric(10,2),default=0)
-    fees_balance = db.Column(db.Numeric(10,2),default=0)
-    payments = db.relationship("Payment",uselist=True,lazy=True, backref="Students")
+    exams = db.relationship("Exam", uselist=True, lazy=True, backref="Student")
+    fees_paid = db.Column(db.Numeric(10, 2), default=0)
+    fees_balance = db.Column(db.Numeric(10, 2), default=0)
+    payments = db.relationship("Payment", uselist=True, lazy=True, backref="Students")
     residence = db.Column(db.String(25), nullable=False)
     special_info = db.Column(db.Text, nullable=True)
     special_diet = db.Column(db.Boolean(), default=False)
@@ -71,8 +72,8 @@ class Class(db.Model):
         secondary="classstreams",
         lazy=True,
     )
-    academic_year = db.relationship("AcademicYear",lazy=True,uselist=False)
-    school_fees = db.Column(db.Numeric(10,2),nullable=False)
+    academic_year = db.relationship("AcademicYear", lazy=True, uselist=False)
+    school_fees = db.Column(db.Numeric(10, 2), nullable=False)
     last_modified = db.Column(
         db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow
     )
@@ -122,6 +123,7 @@ class ClassStream(db.Model):
     def __str__(self):
         return "{} {}".format(self.Class, self.Stream)
 
+
 class StudentParent(db.Model):
     """Relates student with parent M:M"""
 
@@ -149,48 +151,84 @@ class StudentSubject(db.Model):
     def __str__(self):
         return self.id
 
-class Payment(db.Model):
-	__tablename__="payments"
-	id = db.Column(db.Integer,primary_key=True,autoincrement=True)
-	transaction_code = db.Column(db.String(30),nullable=True)
-	source = db.Column(db.String(40),nullable=False)
-	amount = db.Column(db.Numeric(10,2),nullable=False)	
-	mode = db.Column(db.String(8),nullable=False) # Bank or Cash
-	incoming = db.Column(db.Boolean(),default=True)
-	purpose = db.Column(db.String(20),default="School Fees")
-	is_complete = db.Column(db.Boolean(),default=True)
-	#received_by = To be done
-	lastly_modified = db.Column(db.DateTime(),default=datetime.now,onupdate=datetime.now)
-	created_at = db.Column(db.DateTime(),default=datetime.now)
-	student_id = db.Column(db.Integer, db.ForeignKey("students.id",onupdate="CASCADE",ondelete="SET NULL",),autoincrement=True)
-	
-	def __repr__(self):
-		return "<Payment %r>"%self.id
-		
-	def __str__(self):
-		return "{}.{} - {}".format(self.id,self.source,self.amount)
 
-class Exam:
-	__tablename__="exams"
-	id = db.Column(db.Integer,autoincrement=True,primary_key=True)
-	name = db.Column(db.String(30),nullable=True)
-	
+class Payment(db.Model):
+    __tablename__ = "payments"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    transaction_code = db.Column(db.String(30), nullable=True)
+    source = db.Column(db.String(40), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    mode = db.Column(db.String(8), nullable=False)  # Bank or Cash
+    incoming = db.Column(db.Boolean(), default=True)
+    purpose = db.Column(db.String(20), default="School Fees")
+    is_complete = db.Column(db.Boolean(), default=True)
+    # received_by = To be done
+    lastly_modified = db.Column(
+        db.DateTime(), default=datetime.now, onupdate=datetime.now
+    )
+    created_at = db.Column(db.DateTime(), default=datetime.now)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "students.id",
+            onupdate="CASCADE",
+            ondelete="SET NULL",
+        ),
+        autoincrement=True,
+    )
+
+    def __repr__(self):
+        return "<Payment %r>" % self.id
+
+    def __str__(self):
+        return "{}.{} - {}".format(self.id, self.source, self.amount)
+
+
+class Exam(db.Model):
+    __tablename__ = "exams"
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    academic_period = db.relationship("AcademicYear", uselist=False, lazy=True)
+    name = db.Column(db.String(30), nullable=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id", onupdate="CASCADE", ondelete="SET NULL"),
+        autoincrement=True,
+    )
+    subject = db.relationship("Subject", uselist=False, lazy=True)
+    # subject = db.Column(db.String(20),db.ForeignKey("students.subjects",onupdate="CADCADE",ondelete="SET NULL"))
+    score = db.Column(db.Numeric(3, 1), nullable=False)
+    grade = db.Column(db.String(10), nullable=True)
+
+    # subjects =
+    # To bee finished
+
+    def __repr__(self):
+        return "<Exam %r>" % self.id
+
+    def __str__(self):
+        return "{} {}".format(self.academic_period, self.name)
+
+
 # Event listeners
 
+
 class LocalEventListener:
-	
-	@staticmethod
-	def update_fee_records(mapper, connection, target):
-		"""Updates fee balance, """
-		fees_to_pay = target.Class.Class.school_fees
-		total_paid_current_year = 0
-		current_year = datetime.now().year
-		for payment in target.payments:
-			if payment.created_at.year == current_year and payment.is_complete:
-				total_paid_current_year += payment.amount
-		target.fees_paid = total_paid_current_year
-		target.fees_balance = fees_to_pay - total_paid_current_year
-		
+    @staticmethod
+    def update_fee_records(mapper, connection, target):
+        """Updates fee balance,"""
+        try:
+            fees_to_pay = target.Class.Class.school_fees
+        except Exception as e:
+            raise Exception("Class cannot be null!")
+        total_paid_current_year = 0
+        current_year = datetime.now().year
+        for payment in target.payments:
+            if payment.created_at.year == current_year and payment.is_complete:
+                total_paid_current_year += payment.amount
+        target.fees_paid = total_paid_current_year
+        target.fees_balance = fees_to_pay - total_paid_current_year
+
+
 # db.event.listen(Student,"before_insert",event_listener.insert_admission_number)
 db.event.listen(Student, "before_insert", event_listener.insert_age)
 db.event.listen(Student, "before_insert", event_listener.insert_password)
