@@ -1,5 +1,6 @@
 import os
 
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 def get(key, default=None):
     return os.environ.get(key, default)
@@ -47,4 +48,18 @@ MAIL_USE_SSL = get(
     True,
 )
 
-MAIL_DEFAULT_SENDER = get("MAIL_DEFAULT_SENDER", "smartwacaleb@gmail.com")
+MAIL_DEFAULT_SENDER = get(
+     "MAIL_DEFAULT_SENDER",
+      "smartwacaleb@gmail.com"
+      )
+
+## User database config
+
+USER_PROFILE_DIR = get(
+       "USER_PROFILE_DIR",
+      os.path.join(basedir,"static/images/profile")
+      )
+
+if not os.path.isdir(USER_PROFILE_DIR):
+	os.makedirs(USER_PROFILE_DIR)
+	## Creates profile directory

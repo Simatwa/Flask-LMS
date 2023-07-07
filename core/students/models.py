@@ -37,6 +37,7 @@ class Student(db.Model):
     is_active = db.Column(db.Boolean(), nullable=True)
     is_anonymous = db.Column(db.Boolean(), nullable=True)
     password = db.Column(db.String(40), nullable=False, default="student")
+    profile = db.Column(db.String(30),default="default.jpg")
     token = db.Column(db.String(8), nullable=True)
     last_modified = db.Column(
         db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow
@@ -217,3 +218,7 @@ db.event.listen(Student, "before_insert", event_listener.insert_age)
 db.event.listen(Student, "before_insert", event_listener.insert_password)
 db.event.listen(Student, "before_insert", LocalEventListener.update_fee_records)
 db.event.listen(Student, "before_update", LocalEventListener.update_fee_records)
+
+db.event.listen(Student, "before_insert", event_listener.rename_user_profile)
+db.event.listen(Student, "before_update", event_listener.rename_user_profile)
+db.event.listen(Student, "before_delete", event_listener.delete_user_profile)

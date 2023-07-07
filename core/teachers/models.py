@@ -30,7 +30,9 @@ class Teacher(db.Model):
     is_active = db.Column(db.Boolean(), nullable=True)
     is_anonymous = db.Column(db.Boolean(), nullable=True)
     password = db.Column(db.String(40), nullable=False, default="teachers")
+    profile = db.Column(db.String(30),default="default.jpg")
     token = db.Column(db.String(8), nullable=True)
+    #profile = db.Column(db.LargeBinary,nullable=False)
     lastly_modified = db.Column(
         db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow
     )
@@ -177,3 +179,10 @@ class Department(db.Model):
 		return self.name
 		
 db.event.listen(Teacher, "before_insert", event_listener.insert_age)
+
+# EventListeners
+from core.models import event_listener
+
+db.event.listen(Teacher, "before_insert", event_listener.rename_user_profile)
+db.event.listen(Teacher, "before_update", event_listener.rename_user_profile)
+db.event.listen(Teacher, "before_delete", event_listener.delete_user_profile)

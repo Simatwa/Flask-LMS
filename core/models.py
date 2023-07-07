@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from .app import application
 from datetime import datetime
+import os
 
 # from core.accounts.views import Utils
 
@@ -9,6 +10,7 @@ db = SQLAlchemy()
 
 db.init_app(application)
 
+full_path = lambda filename : os.path.join(application.config["USER_PROFILE_DIR"],filename)
 
 class EventListener:
 
@@ -34,7 +36,22 @@ class EventListener:
         if target.password == target.__tablename__[:-1]:
             # Hash this password
             target.password = target.fname
-        target.password = target.password  # hash password
-
-
+        target.password = target.password
+    
+    @classmethod
+    def rename_user_profile(cls, mapper, connection, target):
+    	"""Uniquify the profile name"""
+    	current_profile = target.profile
+    	new_profile = f"{target.__tablename__[:-1]}_{target.id or target.fname}_{target.profile}"
+    	if current_profile:
+    		os.rename(full_path(current_profile),full_path(new_profile))
+    		target.profile = new_profile
+    	
+    @classmethod
+    def delete_user_profile(cls, mapper, connection, target):
+    	"""Deletes user profile"""
+    	profile_path = full_path(target.profile)
+    	if os.path.isfile(profile_path):
+    		os.remove(profile_path)
+    	
 event_listener = EventListener()

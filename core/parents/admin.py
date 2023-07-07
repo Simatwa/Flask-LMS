@@ -5,9 +5,12 @@ from flask import url_for, redirect
 
 from core.admin import admin
 from core.models import db
+from core.app import application
 
 from core.parents.models import Parent
 
+from flask_wtf.file import FileAllowed
+from flask_admin.form import FileUploadField
 
 class ParentModelView(ModelView):
     can_create = True
@@ -25,6 +28,17 @@ class ParentModelView(ModelView):
         ],
     }
 
+    form_extra_fields = {
+       "profile":FileUploadField(
+               "Profile picture",
+               base_path=application.config["USER_PROFILE_DIR"], 
+               validators=[
+                     FileAllowed(['jpg', 'jpeg', 'png'], message='Images only!'),
+                     #FileRequired(message="Choose profile picture")
+                     ]
+            ),
+    }
+    
     def is_accessible(self):
         if current_user.is_authenticated:
             return current_user.is_admin

@@ -4,8 +4,11 @@ from flask_admin.form import SecureForm
 from flask_login import current_user, login_required
 from flask import flash, redirect, url_for
 from core.models import db
+from core.app import application
 from core.teachers.models import Teacher, Subject, Stream, AcademicYear, Activity, Department
 
+from flask_wtf.file import FileAllowed
+from flask_admin.form import FileUploadField
 
 class TeacherModelView(ModelView):
     form_base_class = SecureForm
@@ -21,6 +24,17 @@ class TeacherModelView(ModelView):
             ("F", "Female"),
             ("U", "Unisex"),
         ],
+    }
+
+    form_extra_fields = {
+       "profile":FileUploadField(
+               "Profile picture",
+               base_path=application.config["USER_PROFILE_DIR"], 
+               validators=[
+                     FileAllowed(['jpg', 'jpeg', 'png'], message='Images only!'),
+                     #FileRequired(message="Choose profile picture")
+                     ]
+            ),
     }
 
     @login_required

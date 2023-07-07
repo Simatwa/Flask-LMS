@@ -8,7 +8,10 @@ from core.models import db
 from core.admin import admin
 from core.students.models import Student, Class, ClassStream, Payment, Exam
 
-
+from wtforms.validators import DataRequired
+from flask_wtf.file import FileAllowed
+from flask_admin.form import FileUploadField
+    
 class StudentModelView(ModelView):
     page_size = 50
     can_export = True
@@ -17,6 +20,20 @@ class StudentModelView(ModelView):
     can_edit = True
     can_view_details = True
     form_base_class = SecureForm
+    
+    form_args = {
+    }
+    
+    form_extra_fields = {
+       "profile":FileUploadField(
+               "Profile picture",
+               base_path=application.config["USER_PROFILE_DIR"], 
+               validators=[
+                     FileAllowed(['jpg', 'jpeg', 'png'], message='Images only!'),
+                     #FileRequired(message="Choose profile picture")
+                     ]
+            ),
+    }
 
     @login_required
     def is_accessible(self):

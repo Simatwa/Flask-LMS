@@ -18,6 +18,7 @@ class Parent(db.Model):
     is_active = db.Column(db.Boolean(), nullable=True)
     is_anonymous = db.Column(db.Boolean(), nullable=True)
     password = db.Column(db.String(40), nullable=False, default="parent")
+    profile = db.Column(db.String(30),default="default.jpg")
     token = db.Column(db.String(8), nullable=True)
     lastly_modified = db.Column(
         db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow
@@ -36,3 +37,10 @@ class Parent(db.Model):
     @property
     def fullname(self):
         return f"{self.fname} {self.sname if self.sname else ''}"
+
+# EventListeners
+from core.models import event_listener
+
+db.event.listen(Parent, "before_insert", event_listener.rename_user_profile)
+db.event.listen(Parent, "before_update", event_listener.rename_user_profile)
+db.event.listen(Parent, "before_delete", event_listener.delete_user_profile)
