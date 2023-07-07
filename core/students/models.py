@@ -4,8 +4,9 @@ from core.models import db, application, event_listener
 from datetime import datetime
 from core.parents.models import Parent
 from core.teachers.models import Subject, Stream, AcademicYear
+from core.models import add_user_variables
 
-
+@add_user_variables()
 class Student(db.Model):
     __tablename__ = "students"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -33,16 +34,6 @@ class Student(db.Model):
     parents = db.relationship(
         "Parent", backref="students", secondary="student_parent", lazy=True
     )  # (parent) 1- M
-    is_authenticated = db.Column(db.Boolean(), nullable=True)
-    is_active = db.Column(db.Boolean(), nullable=True)
-    is_anonymous = db.Column(db.Boolean(), nullable=True)
-    password = db.Column(db.String(40), nullable=False, default="student")
-    profile = db.Column(db.String(30),default="default.jpg")
-    token = db.Column(db.String(8), nullable=True)
-    last_modified = db.Column(
-        db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    created_at = db.Column(db.DateTime(), default=datetime.utcnow)
     # classStream_rep = db.Column(db.ForeignKey("classstreams.id",onupdate="CASCADE",ondelete="SET NULL"))
     
     def __str__(self):

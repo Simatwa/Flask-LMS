@@ -12,6 +12,39 @@ db.init_app(application)
 
 full_path = lambda filename : os.path.join(application.config["USER_PROFILE_DIR"],filename)
 
+def add_user_variables():
+	"""Adds user variables to user models"""
+	def decorator(db_model):
+		class ModelDecorator(db_model):
+		  password = db.Column(db.String(40), nullable=False, default=db_model.__tablename__[:-1])
+		  profile = db.Column(db.String(30),default="default.jpg")
+		  token = db.Column(db.String(8), nullable=True)
+		  is_authenticated = db.Column(db.Boolean(), default=False)
+		  is_anonymous = db.Column(db.Boolean(), default=True)
+		  is_active = db.Column(db.Boolean(), default=False)
+		  lastly_modified = db.Column(db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
+		  created_at = db.Column(db.DateTime(), default=datetime.utcnow)
+		  
+		  def __repr__(self):
+		  	return "<%s %r>" % (self.__tablename__[:-1].capitalize(),self.id)
+		  	
+		  def __str__(self):
+		  	return self.fullname
+		  	
+		  def get_id(self):
+		  	return "%r" % self.id
+		  	
+		  @property
+		  def fullname(self):
+		  	return f"{self.fname} {self.sname if self.sname else ''}"	
+		
+		ModelDecorator.__name__=db_model.__name__
+		ModelDecorator.__module__=db_model.__module__
+		ModelDecorator.__class__=db_model.__class__		
+		return ModelDecorator
+
+	return decorator
+	
 class EventListener:
 
     admission_start_at = 100
@@ -43,7 +76,7 @@ class EventListener:
     	"""Uniquify the profile name"""
     	current_profile = target.profile
     	new_profile = f"{target.__tablename__[:-1]}_{target.id or target.fname}_{target.profile}"
-    	if current_profile:
+    	if current_profile and current_profile!="default.jpg":
     		os.rename(full_path(current_profile),full_path(new_profile))
     		target.profile = new_profile
     	

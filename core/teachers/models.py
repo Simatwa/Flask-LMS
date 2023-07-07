@@ -2,8 +2,9 @@ from core.models import db
 from core.app import application
 from core.models import event_listener
 from datetime import datetime
+from core.models import add_user_variables
 
-
+@add_user_variables()
 class Teacher(db.Model):
     __tablename__ = "teachers"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -26,17 +27,6 @@ class Teacher(db.Model):
     bom = db.Column(db.Boolean(), default=False)
     is_parent = db.Column(db.Boolean(), default=False)
     is_admin = db.Column(db.Boolean(), default=False)
-    is_authenticated = db.Column(db.Boolean(), nullable=True)
-    is_active = db.Column(db.Boolean(), nullable=True)
-    is_anonymous = db.Column(db.Boolean(), nullable=True)
-    password = db.Column(db.String(40), nullable=False, default="teachers")
-    profile = db.Column(db.String(30),default="default.jpg")
-    token = db.Column(db.String(8), nullable=True)
-    #profile = db.Column(db.LargeBinary,nullable=False)
-    lastly_modified = db.Column(
-        db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    created_at = db.Column(db.DateTime(), default=datetime.utcnow)
     stream_id = db.Column(
         db.Integer,
         db.ForeignKey("streams.id", onupdate="CASCADE", ondelete="SET NULL"),
@@ -59,20 +49,6 @@ class Teacher(db.Model):
     )
     activity_id = db.Column(db.Integer,db.ForeignKey("activities.id",onupdate="CASCADE",ondelete="SET NULL"),autoincrement=True)
     department_id = db.Column(db.Integer, db.ForeignKey("departments.id",onupdate="CASCADE",ondelete="SET NULL"),autoincrement=True)
-    
-    def __repr__(self):
-        return "<Teacher %r>" % self.id
-
-    def __str__(self):
-        return self.fullname
-
-    def get_id(self):
-        return "%r" % self.id
-
-    @property
-    def fullname(self):
-        return f"{self.fname} {self.sname if self.sname else ''}"
-
 
 class Subject(db.Model):
     __tablename__ = "subjects"
