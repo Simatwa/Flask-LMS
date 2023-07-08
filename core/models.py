@@ -2,6 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from .app import application
 from datetime import datetime
 import os
+from hashlib import sha256
+from werkzeug.utils import secure_filename
 
 # from core.accounts.views import Utils
 
@@ -12,19 +14,22 @@ db.init_app(application)
 
 full_path = lambda filename : os.path.join(application.config["USER_PROFILE_DIR"],filename)
 
+hash_passwd = lambda paswd:sha256(paswd.encode()).hexdigest()
+
 def add_user_variables():
 	"""Adds user variables to user models"""
 	def decorator(db_model):
 		class ModelDecorator(db_model):
-		  password = db.Column(db.String(40), nullable=False, default=db_model.__tablename__[:-1])
-		  profile = db.Column(db.String(30),default="default.jpg")
+		  password = db.Column(db.String(64), nullable=False, default=db_model.__tablename__[:-1])
+		  profile = db.Column(db.String(70),default="default.jpg")
 		  token = db.Column(db.String(8), nullable=True)
 		  is_authenticated = db.Column(db.Boolean(), default=False)
 		  is_anonymous = db.Column(db.Boolean(), default=True)
 		  is_active = db.Column(db.Boolean(), default=False)
+		  password_hashed = db.Column(db.Boolean(), default=False)
 		  lastly_modified = db.Column(db.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
 		  created_at = db.Column(db.DateTime(), default=datetime.utcnow)
-		  
+	  
 		  def __repr__(self):
 		  	return "<%s %r>" % (self.__tablename__[:-1].capitalize(),self.id)
 		  	
@@ -64,12 +69,14 @@ class EventListener:
         student.admission_no = cls.admission_start_at + student_id
 
     @classmethod
-    def insert_password(cls, mapper, connection, target):
-        """Inserts user password"""
+    def hash_password(cls, mapper, connection, target):
+        """Hashes user password"""
+        if target.password_hashed:
+        	return
         if target.password == target.__tablename__[:-1]:
-            # Hash this password
             target.password = target.fname
-        target.password = target.password
+        target.password = hash_passwd(target.password)
+        target.password_hashed = True
     
     @classmethod
     def rename_user_profile(cls, mapper, connection, target):
@@ -84,7 +91,8 @@ class EventListener:
     def delete_user_profile(cls, mapper, connection, target):
     	"""Deletes user profile"""
     	profile_path = full_path(target.profile)
-    	if os.path.isfile(profile_path):
+    	if os.path.isfile(profile_path) and target.profile!="default.jpg":
     		os.remove(profile_path)
+    		
     	
 event_listener = EventListener()

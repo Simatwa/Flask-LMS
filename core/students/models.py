@@ -17,9 +17,9 @@ class Student(db.Model):
     age = db.Column(db.Integer, nullable=True)
     year_of_birth = db.Column(db.Integer, nullable=False)
     admission_no = db.Column(db.Integer, nullable=False, unique=True)
-    nemis_no = db.Column(db.String(10), nullable=True)  # Change to not-null
-    email = db.Column(db.String(40), nullable=True)
-    phone_no = db.Column(db.String(13), nullable=True)
+    nemis_no = db.Column(db.String(10), nullable=True, unique=True)  # Change to not-null
+    email = db.Column(db.String(40), nullable=True, unique=False)
+    phone_no = db.Column(db.String(13), nullable=True, unique=False)
     subjects = db.relationship(
         "Subject", secondary="student_subject", backref="students", lazy=True
     )
@@ -206,10 +206,15 @@ class LocalEventListener:
 		
 # db.event.listen(Student,"before_insert",event_listener.insert_admission_number)
 db.event.listen(Student, "before_insert", event_listener.insert_age)
-db.event.listen(Student, "before_insert", event_listener.insert_password)
+db.event.listen(Student, "before_update", event_listener.insert_age)
+
+db.event.listen(Student, "before_insert", event_listener.hash_password)
+db.event.listen(Student, "before_update", event_listener.hash_password)
+
 db.event.listen(Student, "before_insert", LocalEventListener.update_fee_records)
 db.event.listen(Student, "before_update", LocalEventListener.update_fee_records)
 
 db.event.listen(Student, "before_insert", event_listener.rename_user_profile)
 db.event.listen(Student, "before_update", event_listener.rename_user_profile)
+
 db.event.listen(Student, "before_delete", event_listener.delete_user_profile)

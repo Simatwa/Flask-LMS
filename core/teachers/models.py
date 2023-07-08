@@ -11,10 +11,10 @@ class Teacher(db.Model):
     fname = db.Column(db.String(20), nullable=False)
     sname = db.Column(db.String(20), nullable=True)
     gender = db.Column(db.String(1), nullable=False)
-    id_no = db.Column(db.Integer, nullable=False)
-    tsc_no = db.Column(db.Integer, nullable=True)
-    email = db.Column(db.String(30), nullable=False)
-    phone_no = db.Column(db.String(13), nullable=False)
+    id_no = db.Column(db.Integer, nullable=False, unique=True)
+    tsc_no = db.Column(db.Integer, nullable=True, unique=True)
+    email = db.Column(db.String(30), nullable=False, unique=True)
+    phone_no = db.Column(db.String(13), nullable=False, unique=True)
     county = db.Column(db.String(15), nullable=False)
     year_of_birth = db.Column(db.Integer, nullable=False)
     age = db.Column(db.Integer, nullable=True)
@@ -161,4 +161,11 @@ from core.models import event_listener
 
 db.event.listen(Teacher, "before_insert", event_listener.rename_user_profile)
 db.event.listen(Teacher, "before_update", event_listener.rename_user_profile)
+
+db.event.listen(Teacher, "before_insert", event_listener.insert_age)
+db.event.listen(Teacher, "before_update", event_listener.insert_age)
+
+db.event.listen(Teacher, "before_insert", event_listener.hash_password)
+db.event.listen(Teacher, "before_update", event_listener.hash_password)
+
 db.event.listen(Teacher, "before_delete", event_listener.delete_user_profile)

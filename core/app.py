@@ -25,6 +25,7 @@ def send_mail(subject, *args, **kwargs):
 
 @login_required
 def home():
+    return redirect(url_for("admin.index"))
     if current_user.is_student:
         view_endpoint = "student.home"
     elif current_user.is_parent:

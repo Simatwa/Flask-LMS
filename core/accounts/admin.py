@@ -1,7 +1,7 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
 from core.accounts import app
-from core.accounts.models import User
+from core.accounts.models import SchoolAdmin
 from core.models import db
 from core.admin import admin
 from flask_login import current_user
@@ -13,12 +13,13 @@ from wtforms.validators import DataRequired, Email
 from core.accounts.views import Utils
 
 
-class UserModelView(ModelView):
+class AdminModelView(ModelView):
     form_base_class = SecureForm
     can_create = True
     can_edit = True
     can_view_details = True
-    page_size = 2
+    page_size = 60
+    """
     form_excluded_columns = [
         "created_at",
         "last_updated",
@@ -81,6 +82,7 @@ class UserModelView(ModelView):
             "validators": [DataRequired(message="Password is required")],
         },
     }
+    """
 
     def is_accessible(self):
         if current_user.is_authenticated and current_user.is_admin:
@@ -103,34 +105,29 @@ class Cmd:
         "--email",
         prompt="Enter email address",
     )
-    @click.option("--gender", prompt="Enter gender", type=click.Choice(["F", "M"]))
     @click.password_option(prompt="Enter password")
-    def create_admin(fname, email, gender, password):
+    def create_admin(fname, email, password):
         """Adds new_admin"""
-        user_exist = User.query.filter_by(email=email).first()
-        if user_exist:
-            email = click.secho(
-                "User with that email exist. Enter new one:", fg="yellow"
+        admin_exist = SchoolAdmin.query.filter_by(email=email).first()
+        if admin_exist:
+            email = click.prompt(click.style(
+                "User with that email exist. Enter new one", fg="yellow")
             )
-        new_user = User(
+        new_admin = SchoolAdmin(
             fname=fname,
             email=email,
-            gender=gender,
             password=Utils.hash_password(password),
         )
-        new_user.is_admin = True
-        new_user.is_active = True
-        new_user.is_anonymous = False
-        new_user.is_authenticated = True
-        db.session.add(new_user)
+        new_admin.is_admin = True
+        new_admin.is_active = True
+        new_admin.is_anonymous = False
+        new_admin.is_authenticated = True
+        new_admin.password_hashed = True
+        db.session.add(new_admin)
         db.session.commit()
         click.secho(f"'{fname}' added as Admin successfully!", fg="cyan")
 
 
-admin.add_view(UserModelView(User, db.session))
-
-from core.accounts.models import UserImage
-
-admin.add_view(ModelView(UserImage, db.session))
+admin.add_view(AdminModelView(SchoolAdmin, db.session,name="Admins"))
 
 app.cli.add_command(Cmd.create_admin)

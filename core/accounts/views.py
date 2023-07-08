@@ -22,11 +22,15 @@ from .forms import (
 )
 from . import app
 from ..app import application
-from .models import User, db
+from .models import db, SchoolAdmin
 from sqlalchemy import or_
-from hashlib import sha256
 from uuid import uuid4
 from ..app import send_mail
+from core.models import hash_passwd
+
+from core.students.models import Student
+from core.teachers.models import Teacher
+from core.parents.models import Parent
 
 login_manager = LoginManager()
 login_manager.init_app(application)
@@ -35,14 +39,15 @@ login_manager.init_app(application)
 @login_manager.user_loader
 def load_user(user_id):
     """Loads user id"""
-    return User.query.get(user_id)
+    #return SchoolAdmin.query.get(user_id)
+    return SchoolAdmin.query.get(user_id)
 
 
 class Utils:
     @staticmethod
     def hash_password(paswd):
         """Hashes password"""
-        return sha256(paswd.encode()).hexdigest()
+        return hash_passwd(paswd)
 
     @staticmethod
     def login_not_required(
@@ -94,17 +99,21 @@ class Accounts:
         else:
             if form.validate_on_submit():
                 identifier = form.identifier.data
-                password = form.password.data
+                password = Utils.hash_password(form.password.data)
                 # category = form.category.data
-                try_user = User.query.filter(
-                    User.password == Utils.hash_password(password),
+                """
+                try_user = SchoolAdmin.query.filter(
+                    SchoolAdmin.password == Utils.hash_password(password),
                     or_(
-                        User.email == identifier,
-                        User.phone_no == identifier,
-                        User.index_no
+                        SchoolAdmin.email == identifier,
+                        SchoolAdmin.phone_no == identifier,
+                        SchoolAdmin.index_no
                         == (int(identifier) if identifier.isdigit() else identifier),
                     ),
                 ).first()
+                """
+                try_user = SchoolAdmin.query.filter_by(email=identifier,password=password).first()
+                
                 if try_user:
                     try_user.is_active = True
                     if not try_user.is_authenticated:
@@ -130,7 +139,7 @@ class Accounts:
     @Utils.login_not_required(message="Your account is already verified!")
     def verify_user(cls):
         form = VerifyUserForm()
-        target_user = User.query.filter_by(id=current_user.get_id()).first_or_404()
+        target_user = SchoolAdmin.query.filter_by(id=current_user.get_id()).first_or_404()
         assert target_user.is_authenticated == False, abort(401)
 
         if request.method == "GET":
@@ -175,7 +184,7 @@ class Accounts:
             return render_template("reset_user_password_enter_email.html", form=form)
         else:
             if form.validate_on_submit():
-                user_exist = User.query.filter_by(email=form.email.data).first()
+                user_exist = SchoolAdmin.query.filter_by(email=form.email.data).first()
                 if user_exist:
                     user_exist.token = Utils.generate_verification_token()
                     db.session.commit()
@@ -213,7 +222,7 @@ class Accounts:
 
         form = ResetPasswordFormNew()
         if form.validate_on_submit():
-            user_exist = User.query.filter_by(
+            user_exist = SchoolAdmin.query.filter_by(
                 email=email, token=form.token.data
             ).first()
             if user_exist:
@@ -236,7 +245,7 @@ class Accounts:
     @login_required
     def logout_user(cls):
         """Logs-out user"""
-        cur_user = User.query.get(current_user.get_id())
+        cur_user = SchoolAdmin.query.get(current_user.get_id())
         cur_user.is_active = False
         db.session.commit()
         logout_user()
