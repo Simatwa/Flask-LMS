@@ -1,6 +1,7 @@
 from flask import Flask, redirect, url_for
 from flask_mail import Mail, Message
 from flask_login import login_required, current_user
+from flask_babel import Babel
 
 application = Flask(
     __name__,
@@ -15,6 +16,12 @@ application.config.from_pyfile("config.py")
 
 mail = Mail()
 mail.init_app(application)
+
+# Init Babel
+
+babel = Babel()
+
+babel.init_app(application)
 
 
 def send_mail(subject, *args, **kwargs):
